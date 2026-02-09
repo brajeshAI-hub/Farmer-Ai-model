@@ -120,14 +120,16 @@ if st.button("Recommend Crop", type="primary"):
     st.success(f"Recommended Crop: **{prediction}**")
 
 
-        explanation_prompt = (
-            "Explain in simple language why this crop was recommended using these inputs:\n"
-            f"Soil type: {soil_type}, soil pH: {soil_ph}, temperature: {temperature}°C, "
-            f"rainfall: {rainfall} mm, humidity: {humidity}%. Crop: {prediction}."
-        )
-        with st.spinner("Generating AI explanation..."):
-            explanation = explain_with_llm(explanation_prompt)
-        st.info(explanation)
+    explanation_prompt = (
+        "Explain in simple language why this crop was recommended using these inputs:\n"
+        f"Soil type: {soil_type}, soil pH: {soil_ph}, temperature: {temperature}°C, "
+        f"rainfall: {rainfall} mm, humidity: {humidity}%. Crop: {prediction}."
+    )
+
+    with st.spinner("Generating AI explanation..."):
+        explanation = explain_with_llm(explanation_prompt)
+
+    st.info(explanation)
 
 
 def preprocess_image(img: Image.Image, target_size: Tuple[int, int] = (224, 224)):
