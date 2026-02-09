@@ -90,16 +90,30 @@ def crop_recommendation_ui(crop_model):
     st.caption("Predict suitable crops based on soil and weather conditions.")
 
     col1, col2, col3 = st.columns(3)
-    with col1:
-        soil_type = st.selectbox("Soil Type", ["Sandy", "Loamy", "Clay", "Silty", "Peaty", "Chalky"])
-        soil_ph = st.number_input("Soil pH", min_value=3.0, max_value=10.0, value=6.5, step=0.1)
-    with col2:
-        temperature = st.number_input("Temperature (°C)", min_value=-10.0, max_value=60.0, value=26.0, step=0.5)
-        rainfall = st.number_input("Rainfall (mm)", min_value=0.0, max_value=2000.0, value=120.0, step=5.0)
-    with col3:
-        humidity = st.number_input("Humidity (%)", min_value=0.0, max_value=100.0, value=68.0, step=1.0)
 
-    soil_map: Dict[str, int] = {
+    with col1:
+        soil_type = st.selectbox(
+            "Soil Type",
+            ["Sandy", "Loamy", "Clay", "Silty", "Peaty", "Chalky"]
+        )
+        soil_ph = st.number_input(
+            "Soil pH", min_value=3.0, max_value=10.0, value=6.5, step=0.1
+        )
+
+    with col2:
+        temperature = st.number_input(
+            "Temperature (°C)", min_value=-10.0, max_value=60.0, value=26.0, step=0.5
+        )
+        rainfall = st.number_input(
+            "Rainfall (mm)", min_value=0.0, max_value=2000.0, value=120.0, step=5.0
+        )
+
+    with col3:
+        humidity = st.number_input(
+            "Humidity (%)", min_value=0.0, max_value=100.0, value=68.0, step=1.0
+        )
+
+    soil_map = {
         "Sandy": 0,
         "Loamy": 1,
         "Clay": 2,
@@ -107,29 +121,32 @@ def crop_recommendation_ui(crop_model):
         "Peaty": 4,
         "Chalky": 5,
     }
-if st.button("Recommend Crop", type="primary"):
-    if crop_model is None:
-        prediction = fallback_crop_recommendation(
-            soil_type, soil_ph, temperature, rainfall, humidity
+
+    if st.button("Recommend Crop", type="primary"):
+        if crop_model is None:
+            prediction = fallback_crop_recommendation(
+                soil_type, soil_ph, temperature, rainfall, humidity
+            )
+            st.warning("Using demo AI logic (cloud-safe mode).")
+        else:
+            features = np.array(
+                [[soil_map[soil_type], soil_ph, temperature, rainfall, humidity]]
+            )
+            prediction = crop_model.predict(features)[0]
+
+        st.success(f"Recommended Crop: **{prediction}**")
+
+        explanation_prompt = (
+            "Explain in simple language why this crop was recommended using these inputs:\n"
+            f"Soil type: {soil_type}, soil pH: {soil_ph}, temperature: {temperature}°C, "
+            f"rainfall: {rainfall} mm, humidity: {humidity}%. Crop: {prediction}."
         )
-        st.warning("Using demo AI logic (cloud-safe mode).")
-    else:
-        features = np.array([[soil_map[soil_type], soil_ph, temperature, rainfall, humidity]])
-        prediction = crop_model.predict(features)[0]
 
-    st.success(f"Recommended Crop: **{prediction}**")
+        with st.spinner("Generating AI explanation..."):
+            explanation = explain_with_llm(explanation_prompt)
 
+        st.info(explanation)
 
-    explanation_prompt = (
-        "Explain in simple language why this crop was recommended using these inputs:\n"
-        f"Soil type: {soil_type}, soil pH: {soil_ph}, temperature: {temperature}°C, "
-        f"rainfall: {rainfall} mm, humidity: {humidity}%. Crop: {prediction}."
-    )
-
-    with st.spinner("Generating AI explanation..."):
-        explanation = explain_with_llm(explanation_prompt)
-
-    st.info(explanation)
 
 
 def preprocess_image(img: Image.Image, target_size: Tuple[int, int] = (224, 224)):
