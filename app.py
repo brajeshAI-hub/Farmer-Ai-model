@@ -74,6 +74,16 @@ def explain_with_llm(prompt: str) -> str:
     except Exception as exc:  # pragma: no cover
         return f"Could not generate LLM explanation: {exc}"
 
+def fallback_crop_recommendation(soil_type, soil_ph, temperature, rainfall, humidity):
+    if rainfall > 200 and temperature > 20:
+        return "Rice"
+    if soil_type == "Sandy" and rainfall < 150:
+        return "Maize"
+    if 6.0 <= soil_ph <= 7.5 and temperature < 30:
+        return "Wheat"
+    if humidity > 70:
+        return "Sugarcane"
+    return "Millets"
 
 def crop_recommendation_ui(crop_model):
     st.subheader("1) Crop Recommendation")
@@ -97,15 +107,18 @@ def crop_recommendation_ui(crop_model):
         "Peaty": 4,
         "Chalky": 5,
     }
-
-    if st.button("Recommend Crop", type="primary"):
-        if crop_model is None:
-            st.error("Crop model not found. Train it first with scripts/train_crop_model.py.")
-            return
-
+if st.button("Recommend Crop", type="primary"):
+    if crop_model is None:
+        prediction = fallback_crop_recommendation(
+            soil_type, soil_ph, temperature, rainfall, humidity
+        )
+        st.warning("Using demo AI logic (cloud-safe mode).")
+    else:
         features = np.array([[soil_map[soil_type], soil_ph, temperature, rainfall, humidity]])
         prediction = crop_model.predict(features)[0]
-        st.success(f"Recommended Crop: **{prediction}**")
+
+    st.success(f"Recommended Crop: **{prediction}**")
+
 
         explanation_prompt = (
             "Explain in simple language why this crop was recommended using these inputs:\n"
