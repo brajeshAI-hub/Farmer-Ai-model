@@ -160,49 +160,61 @@ def disease_detection_ui(disease_model, labels: List[str]):
     st.subheader("2) Plant Disease Detection")
     st.caption("Upload a plant leaf image and get disease prediction + severity.")
 
-    uploaded = st.file_uploader("Upload leaf image", type=["jpg", "jpeg", "png"])
+    uploaded = st.file_uploader(
+        "Upload leaf image",
+        type=["jpg", "jpeg", "png"]
+    )
+
     if uploaded is None:
         return
 
     image = Image.open(uploaded)
     st.image(image, caption="Uploaded image", use_container_width=True)
 
+    if not st.button("Detect Disease", type="primary"):
+        return
+
+    # ✅ DEMO MODE (when model not available)
     if disease_model is None or not labels:
-    st.warning("Using demo disease detection (cloud-safe mode).")
+        st.warning("Using demo disease detection (cloud-safe mode).")
 
-    demo_disease = "Leaf Blight"
-    demo_confidence = 0.82
-    demo_severity = "Moderate"
+        demo_disease = "Leaf Blight"
+        demo_confidence = 0.82
+        demo_severity = "Moderate"
 
-    st.success(f"Detected Disease: **{demo_disease}**")
-    st.write(f"Confidence: **{demo_confidence:.0%}**")
-    st.write(f"Estimated Severity: **{demo_severity}**")
+        st.success(f"Detected Disease: **{demo_disease}**")
+        st.write(f"Confidence: **{demo_confidence:.0%}**")
+        st.write(f"Estimated Severity: **{demo_severity}**")
 
-    st.info(
-        "Suggested Action: Remove infected leaves, avoid overhead irrigation, "
-        "and apply recommended fungicide if spread increases."
-    )
-    return
-
-
-        x = preprocess_image(image)
-        probs = disease_model.predict(x, verbose=0)[0]
-        idx = int(np.argmax(probs))
-        confidence = float(probs[idx])
-        disease_name = labels[idx]
-        severity = severity_from_confidence(confidence)
-
-        st.success(f"Detected Disease: **{disease_name}**")
-        st.write(f"Confidence: **{confidence:.2%}**")
-        st.write(f"Estimated Severity: **{severity}**")
-
-        prompt = (
-            f"A plant has {disease_name} with {severity} severity and confidence {confidence:.2%}. "
-            "Give short treatment and prevention advice for a farmer."
+        st.info(
+            "Suggested Action: Remove infected leaves, avoid overhead irrigation, "
+            "and apply recommended fungicide if spread increases."
         )
-        with st.spinner("Generating treatment advice..."):
-            advice = explain_with_llm(prompt)
-        st.info(advice)
+        return
+
+    # ✅ REAL MODEL MODE
+    x = preprocess_image(image)
+    probs = disease_model.predict(x, verbose=0)[0]
+    idx = int(np.argmax(probs))
+
+    confidence = float(probs[idx])
+    disease_name = labels[idx]
+    severity = severity_from_confidence(confidence)
+
+    st.success(f"Detected Disease: **{disease_name}**")
+    st.write(f"Confidence: **{confidence:.2%}**")
+    st.write(f"Estimated Severity: **{severity}**")
+
+    prompt = (
+        f"A plant has {disease_name} with {severity} severity and "
+        f"confidence {confidence:.2%}. "
+        "Give short treatment and prevention advice for a farmer."
+    )
+
+    with st.spinner("Generating treatment advice..."):
+        advice = explain_with_llm(prompt)
+
+    st.info(advice)
 
 
 def main():
