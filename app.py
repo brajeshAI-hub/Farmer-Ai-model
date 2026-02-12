@@ -215,6 +215,23 @@ def disease_detection_ui(disease_model, labels: List[str]):
         advice = explain_with_llm(prompt)
 
     st.info(advice)
+# ---------------- LOGIN SYSTEM ---------------- #
+
+def login():
+    st.set_page_config(page_title="Login", page_icon="🔐")
+    st.title("🔐 AI Farmer Assistant Login")
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        # Simple demo credentials
+        if username == "admin" and password == "1234":
+            st.session_state["authenticated"] = True
+            st.success("Login successful!")
+            st.rerun()
+        else:
+            st.error("Invalid username or password")
 
 
 def main():
@@ -234,5 +251,10 @@ def main():
         disease_detection_ui(disease_model, labels)
 
 
-if __name__ == "__main__":
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if st.session_state["authenticated"]:
     main()
+else:
+    login()
